@@ -1,0 +1,43 @@
+name: Move Azure Resources Between Resource Groups
+
+on:
+  workflow_dispatch:
+    inputs:
+      subscriptionId:
+        description: 'Azure Subscription ID'
+        required: true
+      sourceResourceGroup:
+        description: 'Source Resource Group'
+        required: true
+      targetResourceGroup:
+        description: 'Target Resource Group'
+        required: true
+      resourceIds:
+        description: 'Comma-separated Azure Resource IDs to move'
+        required: true
+
+jobs:
+  move:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set Subscription
+        run: az account set --subscription ${{ github.event.inputs.subscriptionId }}
+
+      - name: Move Resources
+        run: |
+          IFS=',' read -ra RES <<< "${{ github.event.inputs.resourceIds }}"
+          az resource move \
+            --destination-group ${{ github.event.inputs.targetResourceGroup }} \
+            --ids "${RES[@]}"
+
+      - name: Azure Logout
+        run: az logout
