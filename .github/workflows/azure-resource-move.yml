@@ -1,43 +1,32 @@
-name: Move Azure Resources Between Resource Groups
+name: Move Azure Resources
 
 on:
-  workflow_dispatch:
-    inputs:
-      subscriptionId:
-        description: 'Azure Subscription ID'
-        required: true
-      sourceResourceGroup:
-        description: 'Source Resource Group'
-        required: true
-      targetResourceGroup:
-        description: 'Target Resource Group'
-        required: true
-      resourceIds:
-        description: 'Comma-separated Azure Resource IDs to move'
-        required: true
+  push:
+    branches:
+      - main  # Change as per your requirement
 
 jobs:
-  move:
+  move-resources:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
-      - name: Azure Login
-        uses: azure/login@v2
+      - name: Set up Azure CLI
+        uses: Azure/setup-azure@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          azure-clients-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-clients-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set Subscription
-        run: az account set --subscription ${{ github.event.inputs.subscriptionId }}
-
-      - name: Move Resources
+      - name: Move Azure resources
         run: |
-          IFS=',' read -ra RES <<< "${{ github.event.inputs.resourceIds }}"
-          az resource move \
-            --destination-group ${{ github.event.inputs.targetResourceGroup }} \
-            --ids "${RES[@]}"
+          # Define your parameters
+          RESOURCE_GROUP_NAME="source-resource-group"
+          TARGET_RESOURCE_GROUP_NAME="target-resource-group"
+          RESOURCES="resource1 resource2" # Add the resources you want to move
 
-      - name: Azure Logout
-        run: az logout
+          # Move the resources
+          az resource move --destination-group $TARGET_RESOURCE_GROUP_NAME --ids $RESOURCES
